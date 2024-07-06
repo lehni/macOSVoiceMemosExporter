@@ -35,15 +35,14 @@ def get_all_memos(conn):
     :return: rows
     """
     cur = conn.cursor()
-    cur.execute("SELECT ZDATE, ZDURATION, ZCUSTOMLABEL, ZPATH FROM ZCLOUDRECORDING ORDER BY ZDATE")
+    cur.execute("SELECT ZDATE, ZDURATION, ZENCRYPTEDTITLE, ZPATH FROM ZCLOUDRECORDING ORDER BY ZDATE")
 
     return cur.fetchall()
 
-
 def main():
     # Define default paths
-    _db_path_default = os.path.join(os.path.expanduser("~"), "Library", "Application Support",
-                                    "com.apple.voicememos", "Recordings", "CloudRecordings.db")
+    _db_path_default = os.path.join(os.path.expanduser("~"), "Library", "Group Containers",
+                                    "group.com.apple.VoiceMemos.shared", "Recordings", "CloudRecordings.db")
     _export_path_default = os.path.join(os.path.expanduser("~"), "Voice Memos Export")
 
     # Setting up arguments and --help
@@ -120,6 +119,7 @@ def main():
         exit()
     with conn:
         rows = get_all_memos(conn)
+        print(rows)
     if not rows:
         exit()
 
@@ -148,7 +148,7 @@ def main():
         duration_str = str(timedelta(seconds=row[1]))
         duration_str = duration_str[:duration_str.rfind(".") + 3] if "." in duration_str else duration_str + ".00"
         duration_str = "0" + duration_str if len(duration_str) == 10 else duration_str
-        label = row[2].encode('ascii', 'ignore').decode("ascii").replace("/", "_")
+        label = row[2] # .encode('ascii', 'ignore').decode("ascii").replace("/", "_")
         path_old = row[3] if row[3] else ""
         if path_old:
             path_new = label + path_old[path_old.rfind("."):]
@@ -189,6 +189,7 @@ def main():
 
             # copy file and modify file times if this memo should be exported
             if key == 10:
+                print(path_old)
                 copyfile(path_old, path_new)
                 mod_time = time.mktime(date.timetuple())
                 os.utime(path_new, (mod_time, mod_time))
